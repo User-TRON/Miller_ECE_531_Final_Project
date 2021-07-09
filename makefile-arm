@@ -1,0 +1,24 @@
+BUILDROOT_HOME=/home/nathan/Documents/UNM/ECE_531/local_buildroot/buildroot-2021.05
+
+CC=$(BUILDROOT_HOME)/output/host/usr/bin/arm-linux-gnueabi-gcc
+CCFLAGS=--sysroot=$(BUILDROOT_HOME)/output/staging
+INCLUDES=
+LFLAGS=
+LIBS=-lcurl -uClibc -lc
+
+SRC=requestor.c
+OBJ=$(SRC:.c=.o)
+MAIN=test
+
+RM=rm -rf
+
+.c.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+$(MAIN): $(OBJ)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJ) $(LFLAGS) $(LIBS)
+
+all: $(MAIN)
+
+clean:
+	$(RM) $(MAIN) *.o *~
