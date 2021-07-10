@@ -5,14 +5,16 @@
 #define INIT_ERR	1
 #define REQ_ERR		2
 
-#define URL	"http://192.168.1.240:8000"
+#define URL	"http://192.168.1.240:80"
 
 int main(void){
+  fprintf(stderr, "Start\n");
   CURL		*curl;
   CURLcode	res;
 
   curl = curl_easy_init();
   if(curl) {
+    fprintf(stderr, "Curl init successful\n");
     curl_easy_setopt(curl, CURLOPT_URL, URL);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     res = curl_easy_perform(curl);
