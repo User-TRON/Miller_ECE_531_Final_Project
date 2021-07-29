@@ -37,9 +37,18 @@
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  function print_thermostat_program_table($sql_connection){
+  function get_thermostat_schedule($sql_connection){
+    return mysqli_query($sql_connection, "SELECT * FROM temp_schedule");
+  }
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  function get_status($sql_connection){
+    return mysqli_query($sql_connection, "SELECT * FROM status");
+  }
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  function print_thermostat_program_table($result){
 //    echo "print table";
-    $result = mysqli_query($sql_connection, "SELECT * FROM temp_schedule");
 
     while($query_data = mysqli_fetch_row($result)) {
       echo "<tr>";
@@ -51,17 +60,21 @@
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  function print_last_updated_timestamp($sql_connection){
-    $result = mysqli_query($sql_connection, "SELECT * FROM status");
+  function print_current_time(){
     $query_data = mysqli_fetch_row($result);
-    echo $query_data[3];
+    echo date('F j, Y, g:i a T');
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  function print_current_temp($sql_connection){
-    $result = mysqli_query($sql_connection, "SELECT * FROM status");
+  function print_last_updated_timestamp($result){
     $query_data = mysqli_fetch_row($result);
-    echo $query_data[4];
+    echo date('F j, Y, g:i a T', $query_data[2]);
+  }
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  function print_current_temp($result){
+    $query_data = mysqli_fetch_row($result);
+    echo $query_data[3];
   }
 ?>
 
@@ -73,6 +86,7 @@
 
 <?php
   $sql_connection = setup_sql_connection();
+  date_default_timezone_set('America/Denver');
 ?>
 
 
@@ -101,12 +115,19 @@
 
 <h2>Current Temperature at Thermostat</h2>
 <?php
-  print_current_temp($sql_connection);
+  $result = get_status($sql_connection);
+  print_current_temp($result);
+?>
+
+<h2>Current Time at Thermostat</h2>
+<?php
+  print_current_time();
 ?>
 
 <h2>Time of Last Update from Thermostat</h2>
 <?php
-  print_last_updated_timestamp($sql_connection);
+  $result = get_status($sql_connection);
+  print_last_updated_timestamp($result);
 ?>
 
 <h2>Thermostat Schedule</h2>
@@ -117,14 +138,15 @@
     <td>TEMPERATURE</td>
   </tr>
 <?php
-  print_thermostat_program_table($sql_connection);
+  $result = get_thermostat_schedule($sql_connection);
+  print_thermostat_program_table($result);
 ?>
 
 </table>
 
 <!-- Clean up. -->
 <?php
-//  mysqli_free_result($result);
+  mysqli_free_result($result);
   mysqli_close($sql_connection);
 ?>
 
