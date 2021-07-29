@@ -21,13 +21,14 @@
     if(!mysqli_query($sql_connection, $query)) echo("<p>Error creating table.</p>");
 
     //echo "Table temp_schedule is good";
-
     $query = "CREATE TABLE IF NOT EXISTS status (
         ID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, 
         TIME_LAST_PROGRAMMED BIGINT UNSIGNED NOT NULL,
         TIME_LAST_UPDATE BIGINT UNSIGNED NOT NULL,
         CURR_TEMP INT NOT NULL,
-        NEW_TEMP INT NOT NULL)";
+        SET_TEMP INT NOT NULL,
+        POWER INT NOT NULL,
+        NEW_TEMP INT)";
 
     if(!mysqli_query($sql_connection, $query)) echo("<p>Error creating table.</p>");
 

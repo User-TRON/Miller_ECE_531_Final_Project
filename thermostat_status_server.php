@@ -15,38 +15,23 @@ function process_get($sql_connection){
 
   echo json_encode($rows);
 
-//  print json_encode($result_rows);
-
-/*  echo "debug print data";
-  $result = mysqli_query($sql_connection, "SELECT * FROM temp_schedule");
-
-  while($query_data = mysqli_fetch_row($result)) {
-    echo $query_data[0];
-    echo $query_data[1];
-    echo $query_data[2];
-    echo $query_data[3];
-  }*/
   exit();
 }//process_get
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function process_put($sql_connection){
-  echo "process_put\n";    
+//  echo "process_put\n";    
 
   if( $_GET["id"] ) {
     $id = htmlspecialchars($_GET["id"]);
-//    echo "id = $id \n";
 
     $time_last_update = time();
     $curr_temp = htmlspecialchars($_GET["curr_temp"]);
-    $new_temp = "-1";
+    $set_temp = htmlspecialchars($_GET["set_temp"]);
+    $power = htmlspecialchars($_GET["power"]);
 
-    echo $time_last_update;
-    echo $curr_temp;
-    echo $new_temp;
-    
     //save to mysql
-    $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_UPDATE='$time_last_update', CURR_TEMP='$curr_temp', NEW_TEMP='$new_temp' WHERE ID='$id'");
+    $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_UPDATE='$time_last_update', CURR_TEMP='$curr_temp', SET_TEMP='$set_temp', POWER='$power', NEW_TEMP=NULL WHERE ID='$id'");
     exit();
   }
 
@@ -75,7 +60,9 @@ function setup_sql_connection(){
         TIME_LAST_PROGRAMMED BIGINT UNSIGNED NOT NULL,
         TIME_LAST_UPDATE BIGINT UNSIGNED NOT NULL,
         CURR_TEMP INT NOT NULL,
-        NEW_TEMP INT NOT NULL)";
+	SET_TEMP INT NOT NULL,
+	POWER INT NOT NULL,
+        NEW_TEMP INT)";
 
   if(!mysqli_query($sql_connection, $query)) echo("<p>Error creating table.</p>");
 
