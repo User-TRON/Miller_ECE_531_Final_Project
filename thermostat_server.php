@@ -99,14 +99,17 @@
 </form>
 -->
 
+<h2>Current Temperature at Thermostat</h2>
 <?php
-  print_last_updated_timestamp($sql_connection);
   print_current_temp($sql_connection);
 ?>
 
+<h2>Time of Last Update from Thermostat</h2>
+<?php
+  print_last_updated_timestamp($sql_connection);
+?>
 
-<!-- Display to /////////////////MAIN///////////////////
-able data. -->
+<h2>Thermostat Schedule</h2>
 <table border="1" cellpadding="2" cellspacing="2">
   <tr>
     <td>DAY</td>
