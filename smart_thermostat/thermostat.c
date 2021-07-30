@@ -1,5 +1,5 @@
 //<Path to buildroot>/output/host/usr/bin/arm-linux-gcc -o thermostat -lcurl -uClibc -lc thermostat.c 
-
+///home/nathan/Documents/UNM/ECE_531/local_buildroot/buildroot-2021.05/output/host/usr/bin/arm-linux-gcc -o thermostat -lcurl -uClibc -lc thermostat.c 
 // ^ Compilation Command
 
 //***************************
@@ -80,10 +80,11 @@ struct ScheduleStruct {
   enum DayEnum day;
   unsigned long time;
   int temperature;
-  struct ScheduleStruct* next;
+  struct ScheduleStruct *next;
 };
 
 struct ScheduleStruct *schedule_head = NULL;
+struct ScheduleStruct *schedule_end = NULL;
 struct ScheduleStruct *schedule_current = NULL;
 
 CURL *curl;
@@ -100,9 +101,9 @@ static void curl_cleanup(void);
 static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
 static void extract_server_status(void);
 static void extract_server_schedule(void);
-static void create_schedule(void);
-static void add_schedule(void);
+static void add_schedule(struct ScheduleStruct new_schedule);
 static void delete_schedule(void);
+static void print_schedule(void);
 
 static void read_server_status(void){
   D(syslog(LOG_INFO, "Read server config\n"));
@@ -128,10 +129,6 @@ static void extract_server_status(void){
   D(syslog(LOG_INFO, "Extract server config\n"));
 
   char * token = strtok(chunk.memory, "[");
-//  token = strtok(NULL, "]");
-
-//  D(syslog(LOG_INFO, "EXTRACT RESULTS:"));
-//  D(syslog(LOG_INFO, "%s", token));
 
     token = strtok(NULL, ":"); token = strtok(NULL, "\"");
     status.id = strtol(token, NULL, 10);
@@ -167,28 +164,86 @@ static void extract_server_status(void){
 static void extract_server_schedule(void){
   D(syslog(LOG_INFO, "Extract server schedule\n"));
 
+  delete_schedule();
+
   char * token = strtok(chunk.memory, "[");
-  token = strtok(NULL, "]");
 
-  D(syslog(LOG_INFO, "EXTRACT RESULTS:"));
-  D(syslog(LOG_INFO, "%s", token));
+  struct ScheduleStruct temp;
 
-  create_schedule();
+   token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+
+  while(token != NULL){
+    temp.id = strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    temp.day = strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    temp.time = (unsigned long)strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    temp.temperature = strtol(token, NULL, 10);
+
+
+    add_schedule(temp);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+
+  }
+
+  print_schedule();
 
 }
 
-static void create_schedule(void){
-  D(syslog(LOG_INFO, "Create schedule\n"));
 
-}
-
-static void add_schedule(void){
+static void add_schedule(struct ScheduleStruct new_schedule){
   D(syslog(LOG_INFO, "Add schedule\n"));
+
+  struct ScheduleStruct *ptr = (struct ScheduleStruct*) malloc(sizeof(struct ScheduleStruct));
+
+  ptr->id = new_schedule.id;
+  ptr->day = new_schedule.day;
+  ptr->time = new_schedule.time;
+  ptr->temperature = new_schedule.temperature;
+  ptr->next = NULL;
+
+  if(schedule_head == NULL){
+    schedule_head = ptr;
+    schedule_end = ptr;
+  } else {
+    schedule_end->next = ptr;
+    schedule_end = ptr;
+  }
+//  ptr->next = schedule_head;
+//  schedule_head = ptr;
+}
+
+static void print_schedule(void){
+  D(syslog(LOG_INFO, "Print schedule\n"));
+  schedule_current = schedule_head;
+
+  while(schedule_current != NULL){
+    D(syslog(LOG_INFO, "ID          = %i", schedule_current->id));
+    D(syslog(LOG_INFO, "DAY         = %i", schedule_current->day));
+    D(syslog(LOG_INFO, "TIME        = %ld", schedule_current->time));
+    D(syslog(LOG_INFO, "TEMPERATURE = %i", schedule_current->temperature));
+    schedule_current = schedule_current->next;
+  }
 
 }
 
 static void delete_schedule(void){
   D(syslog(LOG_INFO, "Delete schedule\n"));
+
+  while(schedule_head != NULL){
+    schedule_current = schedule_head;
+    schedule_head = schedule_head->next;
+    free(schedule_current);
+  }
+
+  schedule_head = NULL;
+  schedule_current = NULL;
+  schedule_end = NULL;
 
 }
 
