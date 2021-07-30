@@ -45,7 +45,9 @@ enum error_type{OK=0, ERR_FORK, ERR_SETSID, ERR_CHDIR, ERR_NO_LOG_FILE, ERR_DISA
 
 #define THERMOCOUPLE_FILE "/tmp/temp"
 #define HEATER_POWER_FILE "/tmp/status"
-#define AWS_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php"
+#define AWS_STATUS_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php"
+#define AWS_SCHEDULE_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_schedule_server.php"
+
 
 #define CONFIG_SLEEP 5
 #define MAX_MESSAGE_SIZE 10000
@@ -59,28 +61,135 @@ struct MemoryStruct {
 };
 struct MemoryStruct chunk;
 
+struct StatusStruct {
+  int id;
+  unsigned long time_last_programmed;
+  unsigned long time_last_update;
+  int curr_temp;
+  int set_temp;
+  int power;
+  int new_temp;
+};
+
+struct StatusStruct status;
+
+enum DayEnum{Monday=1, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday};
+
+struct ScheduleStruct {
+  int id;
+  enum DayEnum day;
+  unsigned long time;
+  int temperature;
+  struct ScheduleStruct* next;
+};
+
+struct ScheduleStruct *schedule_head = NULL;
+struct ScheduleStruct *schedule_current = NULL;
 
 CURL *curl;
 CURLcode res;
 
 double thermocouple_temperature = 0.0;
 
-static void read_server_config(void);
+static void read_server_status(void);
+static void read_server_schedule(void);
 static void read_thermocouple(void);
-static void curl_init(void);
+static void curl_init(char* url);
 static void curl_run(void);
 static void curl_cleanup(void);
 static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
+static void extract_server_status(void);
+static void extract_server_schedule(void);
+static void create_schedule(void);
+static void add_schedule(void);
+static void delete_schedule(void);
 
-static void read_server_config(void){
+static void read_server_status(void){
   D(syslog(LOG_INFO, "Read server config\n"));
 
-  curl_init();
+  curl_init(AWS_STATUS_SERVER_URL);
   curl_run();
-
-  
-
+  extract_server_status();
   curl_cleanup();
+
+}
+
+static void read_server_schedule(void){
+  D(syslog(LOG_INFO, "Read server schedule\n"));
+
+  curl_init(AWS_SCHEDULE_SERVER_URL);
+  curl_run();
+  extract_server_schedule();
+  curl_cleanup();
+
+}
+
+static void extract_server_status(void){
+  D(syslog(LOG_INFO, "Extract server config\n"));
+
+  char * token = strtok(chunk.memory, "[");
+//  token = strtok(NULL, "]");
+
+//  D(syslog(LOG_INFO, "EXTRACT RESULTS:"));
+//  D(syslog(LOG_INFO, "%s", token));
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    status.id = strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    status.time_last_programmed = (unsigned long)strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    status.time_last_update = (unsigned long)strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    status.curr_temp = strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    status.set_temp = strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    status.power = strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
+    status.new_temp = strtol(token, NULL, 10);
+
+    D(syslog(LOG_INFO, "ID                   = %i", status.id));
+    D(syslog(LOG_INFO, "TIME_LAST_PROGRAMMED = %lu", status.time_last_programmed));
+    D(syslog(LOG_INFO, "TIME_LAST_UPDATE     = %lu", status.time_last_update));
+    D(syslog(LOG_INFO, "CURR_TEMP            = %i", status.curr_temp));
+    D(syslog(LOG_INFO, "SET_TEMP             = %i", status.set_temp));
+    D(syslog(LOG_INFO, "POWER                = %i", status.power));
+    D(syslog(LOG_INFO, "NEW_TEMP             = %i", status.new_temp));
+
+}
+
+static void extract_server_schedule(void){
+  D(syslog(LOG_INFO, "Extract server schedule\n"));
+
+  char * token = strtok(chunk.memory, "[");
+  token = strtok(NULL, "]");
+
+  D(syslog(LOG_INFO, "EXTRACT RESULTS:"));
+  D(syslog(LOG_INFO, "%s", token));
+
+  create_schedule();
+
+}
+
+static void create_schedule(void){
+  D(syslog(LOG_INFO, "Create schedule\n"));
+
+}
+
+static void add_schedule(void){
+  D(syslog(LOG_INFO, "Add schedule\n"));
+
+}
+
+static void delete_schedule(void){
+  D(syslog(LOG_INFO, "Delete schedule\n"));
+
 }
 
 //WriteMemoryCallback()
@@ -115,7 +224,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 //input - none
 //output - none
 //Initializes curl, sets curl url, sets curl to use function to collect return data
-static void curl_init(void){
+static void curl_init(char* url){
   D(syslog(LOG_INFO, "Curl init\n"));
 
 
@@ -128,12 +237,12 @@ static void curl_init(void){
     exit(INIT_ERR);
   }
 
-  if(AWS_SERVER_URL == NULL){
+  if(url == NULL){
     syslog(LOG_INFO, "MISSING URL\n");
     exit(INPUT_ERR);
   }
 
-  curl_easy_setopt(curl, CURLOPT_URL, AWS_SERVER_URL);
+  curl_easy_setopt(curl, CURLOPT_URL, url);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback); //callback function to save curl response to memory
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk); //memory to store curl response
 }
@@ -222,10 +331,11 @@ static void _do_work(void){
   while(true){ //infinite loop
 
     //read config from server
-    read_server_config();
+    read_server_status();
     //read data from thermocouple
     read_thermocouple();
     //determine heater power state
+    read_server_schedule();
     //set heater power
     //write data to server
 

@@ -5,3 +5,4 @@ test
 daemon/log_timed
 
 http_libcurl_comm
+smart_thermostat/thermostat
