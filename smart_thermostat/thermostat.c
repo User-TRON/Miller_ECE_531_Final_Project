@@ -45,7 +45,7 @@ enum error_type{OK=0, ERR_FORK, ERR_SETSID, ERR_CHDIR, ERR_NO_LOG_FILE, ERR_DISA
 
 #define THERMOCOUPLE_FILE "/tmp/temp"
 #define HEATER_POWER_FILE "/tmp/status"
-#define AWS_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_server.php"
+#define AWS_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php"
 
 #define CONFIG_SLEEP 5
 #define MAX_MESSAGE_SIZE 10000
@@ -76,7 +76,11 @@ static void read_server_config(void){
   D(syslog(LOG_INFO, "Read server config\n"));
 
   curl_init();
+  curl_run();
 
+  
+
+  curl_cleanup();
 }
 
 //WriteMemoryCallback()
@@ -139,7 +143,7 @@ static void curl_init(void){
 //output - none
 //Runs curl command, collects response code, prints response code and return data
 static void curl_run(void){
-  D(fprintf(stderr,"Curl run\n"));
+  D(syslog(LOG_INFO, "Curl run\n"));
   res = curl_easy_perform(curl);
   if(res != CURLE_OK){
     exit(HTTP_ERR);
@@ -147,11 +151,11 @@ static void curl_run(void){
 
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &return_code); //get curl response code
 
-  D(fprintf(stderr, "RESPONSE CODE: "));
-  fprintf(stderr, "%ld\n", return_code);
+  D(syslog(LOG_INFO, "RESPONSE CODE: "));
+  syslog(LOG_INFO, "%ld\n", return_code);
 
-  D(fprintf(stderr, "RESPONSE DATA:\n"));
-  fprintf(stderr, "%s\n", chunk.memory);
+  D(syslog(LOG_INFO, "RESPONSE DATA:\n"));
+  syslog(LOG_INFO, "%s\n", chunk.memory);
 }
 
 //curl_cleanup()
@@ -159,7 +163,7 @@ static void curl_run(void){
 //output - none
 //Run curl cleanup command
 static void curl_cleanup(void){
-  D(fprintf(stderr, "Curl cleanup\n"));
+  D(syslog(LOG_INFO, "Curl cleanup\n"));
   curl_easy_cleanup(curl);
 
   free(chunk.memory); //clear allocated memory
