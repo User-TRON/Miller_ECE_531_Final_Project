@@ -4,7 +4,16 @@
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function process_get($sql_connection){
-//  echo "process_get\n";
+  echo "process_get\n";
+
+  if( $_GET["delete_id"] ) {
+    $delete_id = htmlspecialchars($_GET["delete_id"]);
+    echo "got delete_id $delete_id\n"; 
+
+    $result = mysqli_query($sql_connection, "DELETE FROM temp_schedule where id='$delete_id'");
+
+  }else {  
+  
 
   $result = mysqli_query($sql_connection, "SELECT * FROM temp_schedule");
   $rows = array();
@@ -26,6 +35,7 @@ function process_get($sql_connection){
     echo $query_data[2];
     echo $query_data[3];
   }*/
+  }
   exit();
 }//process_get
 
@@ -48,10 +58,48 @@ function process_post($sql_connection){
 
     $result = mysqli_query($sql_connection, "INSERT INTO temp_schedule (DAY, SET_TIME, TEMP_SET) VALUES ('$day', '$time', '$temp')");
 
-  }
+    $id='1';
+    $time_last_programmed = time();
+
+    $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_PROGRAMMED='$time_last_programmed' WHERE ID='$id'");
+
+     exit();
+   }
+
   exit();
   
 }//process_post
+
+function process_delete($sql_connection){
+  echo "process_post\n";    
+
+  if( $_POST["submit"] ) {
+    echo "got submit\n";  
+   
+    $day = htmlspecialchars($_POST["DAY"]);
+    $time = htmlspecialchars($_POST["TIME"]);
+    $temp = htmlspecialchars($_POST["TEMPERATURE"]);
+
+    echo $day;
+    echo "  |  ";
+    echo $time;
+    echo "  |  ";
+    echo $temp;
+
+    $result = mysqli_query($sql_connection, "INSERT INTO temp_schedule (DAY, SET_TIME, TEMP_SET) VALUES ('$day', '$time', '$temp')");
+
+    $id='1';
+    $time_last_programmed = time();
+
+    $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_PROGRAMMED='$time_last_programmed' WHERE ID='$id'");
+
+     exit();
+   }
+
+  exit();
+  
+}//process_post
+
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function handle_error(){

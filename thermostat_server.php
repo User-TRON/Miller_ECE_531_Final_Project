@@ -51,11 +51,31 @@
   function print_thermostat_program_table($result){
 //    echo "print table";
 
+    while($query_data = mysqli_fetch_array($result)) {
+      echo "<tr>";
+      echo "<td>",$query_data[0], "</td>",
+           "<td>",$query_data[1], "</td>",
+           "<td>",$query_data[2], "</td>",
+           "<td>",$query_data[3], "</td>";
+      echo "<td><a href='thermostat_schedule_server.php?delete_id=",$query_data[0],"'>Delete</a></td>";
+      echo "</tr>";
+    }
+  }
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  function print_status_table($result){
+//    echo "print table";
+
     while($query_data = mysqli_fetch_row($result)) {
       echo "<tr>";
-      echo "<td>",$query_data[1], "</td>",
+      echo "<td>",$query_data[0], "</td>",
+           "<td>",$query_data[1], "</td>",
            "<td>",$query_data[2], "</td>",
-           "<td>",$query_data[3], "</td?";
+           "<td>",$query_data[3], "</td>",
+	   "<td>",$query_data[4], "</td>",
+           "<td>",$query_data[5], "</td>",
+           "<td>",$query_data[6], "</td>";
+
       echo "</tr>";
     }
   }
@@ -154,6 +174,7 @@
 <h2>Thermostat Schedule</h2>
 <table border="1" cellpadding="2" cellspacing="2">
   <tr>
+    <td>ID</td>
     <td>DAY</td>
     <td>TIME</td>
     <td>TEMPERATURE</td>
@@ -191,6 +212,22 @@
   </table>
 </form>
 
+<h2>Status Debug</h2>
+<table border="1" cellpadding="2" cellspacing="2">
+  <tr>
+    <td>ID</td>
+    <td>TIME_LAST_PROGRAMMED</td>
+    <td>TIME_LAST_UPDATE</td>
+    <td>CURR_TEMP</td>
+    <td>SET_TEMP</td>
+    <td>POWER</td>
+    <td>NEW_TEMP</td>
+  </tr>
+<?php
+  $result = get_status($sql_connection);
+  print_status_table($result);
+?>
+</table>
 
 <!-- Clean up. -->
 <?php

@@ -46,11 +46,11 @@ function process_put($sql_connection){
     echo $time_last_programmed;
     echo $new_temp;
     
-    $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_PROGRAMMED='$time_last_programmed', NEW_TEMP='$new_temp' WHERE ID='$id'");
-
-    exit();
-  }
-
+    if($new_temp != null){
+      $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_PROGRAMMED='$time_last_programmed', NEW_TEMP='$new_temp' WHERE ID='$id'");
+      exit();
+    }
+  } 
 }//process_put
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
