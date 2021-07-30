@@ -118,6 +118,8 @@
 <html>
 <body>
 <h1>ECE 531 Thermostat Control</h1>
+<meta http-equiv="refresh" content="10" > 
+
 
 <?php
   $sql_connection = setup_sql_connection();
