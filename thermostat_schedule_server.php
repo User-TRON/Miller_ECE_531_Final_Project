@@ -88,7 +88,7 @@ function setup_sql_connection(){
 function process_request($sql_connection){
 //  echo "process_request\n";
   $method = $_SERVER['REQUEST_METHOD'];
-//  echo "Method = $method \n";
+  echo "Schedule Method = $method \n";
 
   switch ($method) {
     case 'GET':

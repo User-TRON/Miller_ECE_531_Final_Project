@@ -4,7 +4,7 @@
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function process_get($sql_connection){
-//  echo "process_get\n";
+  echo "process_get\n";
 
   $result = mysqli_query($sql_connection, "SELECT * FROM status");
   $rows = array();
@@ -18,11 +18,14 @@ function process_get($sql_connection){
   exit();
 }//process_get
 
+
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function process_put($sql_connection){
-//  echo "process_put\n";    
+  echo "process_put\n";    
 
   if( $_GET["id"] ) {
+    echo "got id\n";
     $id = htmlspecialchars($_GET["id"]);
 
     $time_last_update = time();
@@ -32,6 +35,19 @@ function process_put($sql_connection){
 
     //save to mysql
     $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_UPDATE='$time_last_update', CURR_TEMP='$curr_temp', SET_TEMP='$set_temp', POWER='$power', NEW_TEMP=NULL WHERE ID='$id'");
+    exit();
+  }
+  else if($_POST["new_temp"]){
+    echo "got new_temp\n";
+
+    $id='1';
+    $time_last_programmed = time();
+    $new_temp = htmlspecialchars($_POST["TEMPERATURE"]);
+    echo $time_last_programmed;
+    echo $new_temp;
+    
+    $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_PROGRAMMED='$time_last_programmed', NEW_TEMP='$new_temp' WHERE ID='$id'");
+
     exit();
   }
 
@@ -75,9 +91,10 @@ function setup_sql_connection(){
 function process_request($sql_connection){
 //  echo "process_request\n";
   $method = $_SERVER['REQUEST_METHOD'];
-//  echo "Method = $method \n";
+  echo "Status Method = $method \n";
 
   switch ($method) {
+    case 'POST':
     case 'PUT':
       process_put($sql_connection);  
       break;
@@ -87,7 +104,7 @@ function process_request($sql_connection){
       break;
 
     case 'DELETE':
-    case 'POST':
+
     default:
       handle_error();  
       break;

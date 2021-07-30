@@ -116,6 +116,24 @@
   print_set_temp($result);
 ?>
 
+<!-- Change Schedule -->
+<form method="post" action="thermostat_status_server.php">
+  <table border="0">
+    <tr>
+      <td>Change Temperature Until Next Schedule Change</td>
+    </tr>
+    <tr>
+      <td>
+        <input type="number" name="TEMPERATURE" min="-100" max="150" />
+      </td>
+      <td>
+        <input type="submit" value="set" name="new_temp">
+      </td>
+    </tr>
+  </table>
+</form>
+
+
 <h2>Current Power</h2>
 <?php
   $result = get_status($sql_connection);
