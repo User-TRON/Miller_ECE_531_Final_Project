@@ -29,6 +29,30 @@ function process_get($sql_connection){
   exit();
 }//process_get
 
+
+function process_post($sql_connection){
+  echo "process_post\n";    
+
+  if( $_POST["submit"] ) {
+    echo "got submit\n";  
+   
+    $day = htmlspecialchars($_POST["DAY"]);
+    $time = htmlspecialchars($_POST["TIME"]);
+    $temp = htmlspecialchars($_POST["TEMPERATURE"]);
+
+    echo $day;
+    echo "  |  ";
+    echo $time;
+    echo "  |  ";
+    echo $temp;
+
+    $result = mysqli_query($sql_connection, "INSERT INTO temp_schedule (DAY, SET_TIME, TEMP_SET) VALUES ('$day', '$time', '$temp')");
+
+  }
+  exit();
+  
+}//process_post
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function handle_error(){
   echo "Invalid request\n";
@@ -70,10 +94,12 @@ function process_request($sql_connection){
     case 'GET':
       process_get($sql_connection);  
       break;
+    case 'POST':
+      process_post($sql_connection);
+      break;
 
      case 'DELETE':
      case 'PUT':
-     case 'POST':
      default:
       handle_error();  
       break;

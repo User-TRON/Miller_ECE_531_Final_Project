@@ -77,6 +77,19 @@
     $query_data = mysqli_fetch_row($result);
     echo $query_data[3];
   }
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  function print_set_temp($result){
+    $query_data = mysqli_fetch_row($result);
+    echo $query_data[4];
+  }
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  function print_power($result){
+    $query_data = mysqli_fetch_row($result);
+    echo $query_data[5];
+  }
+
 ?>
 
 <!--/////////////////MAIN///////////////////-->
@@ -91,33 +104,22 @@
 ?>
 
 
-<!-- Input form -->
-<!--
-<form action="<PHP echo $_SERVER['SCRIPT_NAME'] ?>" method="PUT">
-  <table border="0">
-    <tr>
-      <td>ID</td>
-      <td>JSON</td>
-    </tr>
-    <tr>
-      <td>
-        <input type="text" name="id" maxlength="45" size="30" />
-      </td>
-      <td>
-        <input type="text" name="json" maxlength="90" size="60" />
-      </td>
-      <td>
-        <input type="submit" value="Add Data" />
-      </td>
-    </tr>
-  </table>
-</form>
--->
-
 <h2>Current Temperature at Thermostat</h2>
 <?php
   $result = get_status($sql_connection);
   print_current_temp($result);
+?>
+
+<h2>Current Set Temperature</h2>
+<?php
+  $result = get_status($sql_connection);
+  print_set_temp($result);
+?>
+
+<h2>Current Power</h2>
+<?php
+  $result = get_status($sql_connection);
+  print_power($result);
 ?>
 
 <h2>Current Time at Thermostat</h2>
@@ -144,6 +146,33 @@
 ?>
 
 </table>
+
+<!-- Change Schedule -->
+<h2>Add New Thermostat Schedule</h2>
+<form method="post" action="thermostat_schedule_server.php">
+  <table border="0">
+    <tr>
+      <td>Day</td>
+      <td>Time</td>
+      <td>Temperature</td>
+    </tr>
+    <tr>
+      <td>
+        <input type="number" name="DAY" min="1" max="7" />
+      </td>
+      <td>
+        <input type="time" name="TIME" />
+      </td>
+      <td>
+        <input type="number" name="TEMPERATURE" min="-100" max="150" />
+      </td>
+      <td>
+        <input type="submit" value="add" name="submit">
+      </td>
+    </tr>
+  </table>
+</form>
+
 
 <!-- Clean up. -->
 <?php
