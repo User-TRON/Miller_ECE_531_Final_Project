@@ -14,7 +14,7 @@
 
     $query = "CREATE TABLE IF NOT EXISTS temp_schedule (
         ID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, 
-        DAY ENUM('SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY') NOT NULL,
+        DAY ENUM('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY') NOT NULL,
         SET_TIME TIME NOT NULL,
         TEMP_SET INT NOT NULL)";
 
@@ -39,7 +39,7 @@
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   function get_thermostat_schedule($sql_connection){
-    return mysqli_query($sql_connection, "SELECT * FROM temp_schedule");
+    return mysqli_query($sql_connection, "SELECT * FROM temp_schedule ORDER BY DAY, SET_TIME ASC");
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -198,7 +198,17 @@
     </tr>
     <tr>
       <td>
-        <input type="number" name="DAY" min="1" max="7" />
+        <!-- <input type="number" name="DAY" min="1" max="7" /> -->
+        <select name="DAY">
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+	  <option value="7">Sunday</option>
+      </select><br>
+
       </td>
       <td>
         <input type="time" name="TIME" />

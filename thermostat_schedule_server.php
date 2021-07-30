@@ -15,7 +15,7 @@ function process_get($sql_connection){
   }else {  
   
 
-  $result = mysqli_query($sql_connection, "SELECT * FROM temp_schedule");
+  $result = mysqli_query($sql_connection, "SELECT * FROM temp_schedule ORDER BY DAY, SET_TIME ASC");
   $rows = array();
 
   while($r = mysqli_fetch_assoc($result)){
@@ -121,7 +121,7 @@ function setup_sql_connection(){
 
   $query = "CREATE TABLE IF NOT EXISTS temp_schedule (
         ID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, 
-        DAY ENUM('SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY') NOT NULL,
+        DAY ENUM('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY') NOT NULL,
         SET_TIME TIME NOT NULL,
         TEMP_SET INT NOT NULL)";
 
