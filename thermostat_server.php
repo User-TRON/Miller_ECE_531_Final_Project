@@ -69,12 +69,13 @@
     while($query_data = mysqli_fetch_row($result)) {
       echo "<tr>";
       echo "<td>",$query_data[0], "</td>",
-           "<td>",$query_data[1], "</td>",
-           "<td>",$query_data[2], "</td>",
+           "<td>",date('F j, Y, g:i:s a T',$query_data[1]), "</td>",
+           "<td>",date('F j, Y, g:i:s a T',$query_data[2]), "</td>",
            "<td>",$query_data[3], "</td>",
 	   "<td>",$query_data[4], "</td>",
            "<td>",$query_data[5], "</td>",
            "<td>",$query_data[6], "</td>";
+//    echo date('F j, Y, g:i a T', $query_data[2]);
 
       echo "</tr>";
     }
@@ -83,13 +84,13 @@
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   function print_current_time(){
     $query_data = mysqli_fetch_row($result);
-    echo date('F j, Y, g:i a T');
+    echo date('F j, Y, g:i:s a T');
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   function print_last_updated_timestamp($result){
     $query_data = mysqli_fetch_row($result);
-    echo date('F j, Y, g:i a T', $query_data[2]);
+    echo date('F j, Y, g:i:s a T', $query_data[2]);
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
