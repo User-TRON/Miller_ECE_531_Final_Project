@@ -120,7 +120,8 @@ static void read_server_status(void){
   curl_run();
 
   sec = time(NULL);
-  time_delta = status.time_last_programmed - sec;
+  time_delta = (int)status.time_last_update - sec;
+  D(syslog(LOG_INFO, "%i = %i - %li\n", time_delta, (int)status.time_last_update, time(NULL)));
 
   extract_server_status();
   curl_cleanup();
@@ -193,10 +194,34 @@ static void extract_server_schedule(void){
     temp.id = strtol(token, NULL, 10);
 
     token = strtok(NULL, ":"); token = strtok(NULL, "\"");
-    temp.day = strtol(token, NULL, 10);
+//    syslog(LOG_INFO, "token is %s\n", token);
+//    temp.day = token;//strtok(token, NULL, 10);
+    if(strcmp(token, "MONDAY")==0)
+      temp.day = Monday;
+    else if(strcmp(token, "TUESDAY")==0)
+      temp.day = Tuesday;
+    else if(strcmp(token, "WEDNESDAY")==0)
+      temp.day = Wednesday;
+    else if(strcmp(token, "THURSDAY")==0)
+      temp.day = Thursday;
+    else if(strcmp(token, "FRIDAY")==0)
+      temp.day = Friday;
+    else if(strcmp(token, "SATURDAY")==0)
+      temp.day = Saturday;
+    else if(strcmp(token, "SUNDAY")==0)
+      temp.day = Sunday;
 
-    token = strtok(NULL, ":"); token = strtok(NULL, "\"");
-    temp.time = (unsigned long)strtol(token, NULL, 10);
+
+    token = strtok(NULL, ":"); token = strtok(NULL, ":");
+    memmove(token, token+1, strlen(token));
+    temp.time = ((unsigned long)strtol(token, NULL, 10))*3600;
+//    syslog(LOG_INFO, "time hr %s temp time %li", token, temp.time);
+    token = strtok(NULL, ":");
+    temp.time += ((unsigned long)strtol(token, NULL, 10))*60;
+//    syslog(LOG_INFO, "time min %s temp time %li", token, temp.time);
+    token = strtok(NULL, "\"");
+    temp.time += (unsigned long)strtol(token, NULL, 10);
+//    syslog(LOG_INFO, "time sec %s temp time %li", token, temp.time);
 
     token = strtok(NULL, ":"); token = strtok(NULL, "\"");
     temp.temperature = strtol(token, NULL, 10);
@@ -287,26 +312,56 @@ static void set_heater_power(void){
 static void set_temp(void){
   D(syslog(LOG_INFO, "Set temp\n"));
 
-  //check schedule temp
-//  struct timeval now;
-//  now.tv_sec = thermostat_status.time_last_programmed;
-//  settimeofday(&now, NULL);
-
-//  time_t rawtime;
-//  struct tm *info;
-//  time(&rawtime);
-//  rawtime->tv_sec = thermostat_status_time_last_programmed;
-//  int today = localtime(&rawtime)->tm_wday + 1;
-//  D(syslog(LOG_INFO, "Today is %i\n", today));
-//  D(syslog(LOG_INFO, "Today sec %li", time(NULL)));
-
   int time_now = time(NULL) + time_delta;
 
-  D(syslog(LOG_INFO, "time() %i\n", time(NULL)));
+  D(syslog(LOG_INFO, "time() %li\n", time(NULL)));
   D(syslog(LOG_INFO, "*!*!*!**!*!*!*!**!Current time %d\n", time_now));
 
-  thermostat_status.set_temp = 70;
+  setenv("TZ", "MST7EDT", 1);
+  tzset();
 
+  time_t rawtime = time_now;
+  struct tm *local = localtime(&rawtime);
+  D(syslog(LOG_INFO, "%d:%d:%d %d %d, %d\n", local->tm_hour, local->tm_min, local->tm_sec, local->tm_mon+1, local->tm_mday, local->tm_year + 1900));
+
+  int today = local->tm_wday;
+  if(today == 0){
+    today = 7;
+  }
+  D(syslog(LOG_INFO, "Today is %i\n", today));
+  int totime = (local->tm_hour * 3600) + (local->tm_min * 60) + local->tm_sec;
+ 
+  schedule_current = schedule_head;
+
+  struct ScheduleStruct set_schedule;
+  set_schedule = *schedule_current;
+
+  if(schedule_current == NULL){
+    //no program
+     thermostat_status.set_temp = 70;
+  } else {
+    while (schedule_current != NULL){
+      D(syslog(LOG_INFO, "Try id %i\n", schedule_current->id));
+      D(syslog(LOG_INFO, "Schedule day %i today %i",schedule_current->day, today )); 
+
+      if(schedule_current->day > today){
+        D(syslog(LOG_INFO, "Stop as %i > %i\n", schedule_current->day, today));
+        break;
+      }
+
+      if((schedule_current->day >= today) && (schedule_current->time > totime)){
+        D(syslog(LOG_INFO, "Stop as %i >= %i && %li > %i", schedule_current->day, today, schedule_current->time, totime));
+        break;
+      }
+      
+      set_schedule = *schedule_current;
+      schedule_current = schedule_current->next;
+      D(syslog(LOG_INFO, "Try next schedule\n"));
+    }
+
+    D(syslog(LOG_INFO, "Decided on id %i temp %i\n", set_schedule.id, set_schedule.temperature));
+    thermostat_status.set_temp = set_schedule.temperature;
+  }
   //if different, set new to null
 //  if(thermostat_status.set_temp != status.set_temp){
 //    D(syslog(LOG_INFO, "Schedule Change\n"));
