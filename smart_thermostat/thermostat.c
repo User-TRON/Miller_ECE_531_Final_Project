@@ -30,8 +30,6 @@
 #define ERROR_TIME_FORMAT "Received time errno %s"
 #define ERROR_USLEEP_FORMAT "Received usleep errno %s"
 
-//#define LOG_FILE_NAME "/var/log/messages"
-
 #define DEBUG 1
 //#undef DEBUG
 
@@ -119,6 +117,7 @@ static void write_heater_file(void);
 static void process_config_file(void);
 static void process_arguments(int argc, char** argv);
 static void print_help(void);
+static void setup_log(void);
 
 static void read_server_status(void){
   D(syslog(LOG_INFO, "Read server config\n"));
@@ -169,7 +168,7 @@ static void extract_server_status(void){
     status.power = strtol(token, NULL, 10);
 
     token = strtok(NULL, ":"); token = strtok(NULL, "\"");
-    syslog(LOG_INFO, "~~~~~~~~~~~~%s\n", token);
+    D(syslog(LOG_INFO, "~~~~~~~~~~~~%s\n", token));
     if(strcmp("null}]", token) == 0){
       status.new_temp = -200;
     } else {
@@ -518,10 +517,10 @@ static void curl_run(void){
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &return_code); //get curl response code
 
   D(syslog(LOG_INFO, "RESPONSE CODE: "));
-  syslog(LOG_INFO, "%ld\n", return_code);
+  D(syslog(LOG_INFO, "%ld\n", return_code));
 
   D(syslog(LOG_INFO, "RESPONSE DATA:\n"));
-  syslog(LOG_INFO, "%s\n", chunk.memory);
+  D(syslog(LOG_INFO, "%s\n", chunk.memory));
 }
 
 //curl_cleanup()
@@ -537,7 +536,7 @@ static void curl_cleanup(void){
 }
 
 static void read_thermocouple(void){
-  syslog(LOG_INFO, "Read thermocouple\n");
+  D(syslog(LOG_INFO, "Read thermocouple\n"));
 
   FILE* file_ptr;
   
@@ -548,7 +547,7 @@ static void read_thermocouple(void){
 
   fscanf(file_ptr, "%lf", &thermocouple_temperature);
 
-  syslog(LOG_INFO, "Got thermocouple temperature = %f\n", thermocouple_temperature);
+  D(syslog(LOG_INFO, "Got thermocouple temperature = %f\n", thermocouple_temperature));
 
   fclose(file_ptr);
 
@@ -654,7 +653,7 @@ static void process_arguments(int argc, char** argv){
 //print_help()
 //input - none
 //output - none
-//Prints the help information about how to use http_libcurl_comm
+//Prints the help information about how to use thermostat
 void print_help(void){
   fprintf(stderr, "Usage: thermostat [-h] [-c config_file_location]\n");
   fprintf(stderr, "    -h, --help     Print help text\n");
@@ -689,24 +688,51 @@ static void process_config_file(void){
     strcpy(AWS_STATUS_SERVER_URL, "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php");
   if(strcmp(AWS_SCHEDULE_SERVER_URL,"")==0)
     strcpy(AWS_SCHEDULE_SERVER_URL, "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_schedule_server.php");
-  if(strcmp(LOG_FILE,"")==0)
-    strcpy(LOG_FILE, "/var/log/messages");
 
-  D(syslog(LOG_INFO, "STATUS_SERVER_URL %s\n", AWS_STATUS_SERVER_URL)); 
-  D(syslog(LOG_INFO, "SCHEDULE_SERVER_URL %s\n", AWS_SCHEDULE_SERVER_URL)); 
-  D(syslog(LOG_INFO, "LOG_FILE %s\n", LOG_FILE)); 
+  D(syslog(LOG_INFO, "FINAL STATUS_SERVER_URL %s\n", AWS_STATUS_SERVER_URL)); 
+  D(syslog(LOG_INFO, "FINAL SCHEDULE_SERVER_URL %s\n", AWS_SCHEDULE_SERVER_URL)); 
+  D(syslog(LOG_INFO, "FINAL LOG_FILE %s\n", LOG_FILE)); 
+
+  if(strcmp(LOG_FILE,"")!=0)
+    setup_log();
+  else
+  openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON); //configure syslog information and parameters
+
 
   fclose(file);
 }
 
+void setup_log(void){
+  D(syslog(LOG_INFO, "setup_log")); 
+
+  closelog();
+  openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_LOCAL1); //configure syslog information and parameters
+
+  FILE *file = NULL;
+
+  if((file = fopen("/etc/syslog.conf", "a")) == NULL){
+//    syslog(LOG_INFO, "Unable to read Thermocouple file, will try again\n");
+    return;
+  }
+
+  char var[200]= "";
+  strcat(var, "local1.info ");
+  strcat(var, LOG_FILE);
+
+  D(syslog(LOG_INFO, "Redirect syslog %s\n", var));
+
+  system("pkill -HUP syslogd");
+
+}
+
 int main(int argc, char **argv){
-
-  openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON); //configure syslog information and parameters
-  syslog(LOG_INFO, "Starting thermostat\n");
-
   process_arguments(argc, argv);
 
   process_config_file();  
+
+//  openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON); //configure syslog information and parameters
+  syslog(LOG_INFO, "Starting thermostat\n");
+
 
   pid_t pid=fork(); //fork to prevent blocking syslogd or initd
 
