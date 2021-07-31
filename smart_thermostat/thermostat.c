@@ -117,8 +117,8 @@ static void set_heater_power(void);
 static void set_temp(void);
 static void write_heater_file(void);
 static void process_config_file(void);
-static void process_arguments(void);
-
+static void process_arguments(int argc, char** argv);
+static void print_help(void);
 
 static void read_server_status(void){
   D(syslog(LOG_INFO, "Read server config\n"));
@@ -606,18 +606,66 @@ static void _do_work(void){
   }
 }
 
-static void process_arguments(void){
-  D(syslog(LOG_INFO, "process_arguments\n")); 
- 
+static void process_arguments(int argc, char** argv){
+  D(syslog(LOG_INFO, "process_arguments %i\n",argc)); 
 
-  D(syslog(LOG_INFO, "CONFIG_FILE %s\n", CONFIG_FILE)); 
+//  D(fprintf(stderr, "Num Arguments = %i\n",argc)); 
+ 
+  if(argc < 1){ 
+    fprintf(stderr, "TOO FEW ARGUMENTS\n"); 
+    print_help(); 
+    exit(INPUT_ERR); 
+  } 
+ 
+  for(int i=1; i<argc; i++){ 
+    D(fprintf(stderr, "%d %s\n", i, argv[i])); 
+ 
+    if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help") ){ 
+      print_help(); 
+      exit(OK); 
+ 
+    }else if(!strcmp(argv[i], "-c") || !strcmp(argv[i], "--config_file") ){ 
+      //config file 
+      i++; 
+      if(i >= argc){ 
+        fprintf(stderr, "MISSING CONFIG FILE\n"); 
+        print_help(); 
+        exit(INPUT_ERR); 
+      } 
+ 
+      D(syslog(LOG_INFO, "%d %s\n", i, argv[i])); 
+      strcpy(CONFIG_FILE, argv[i]); 
+      D(syslog(LOG_INFO, "Saved CONFIG FILE: %s\n", CONFIG_FILE)); 
+ 
+    }else{
+      fprintf(stderr, "INVALID ARGUMENT INPUT\n");
+      print_help();
+      exit(INPUT_ERR);
+    }
+  }
 
   if(strcmp(CONFIG_FILE, "")==0)
     strcpy(CONFIG_FILE,"./thermostat.config");
 
-  D(syslog(LOG_INFO, "CONFIG_FILE %s\n", CONFIG_FILE)); 
+  D(syslog(LOG_INFO, "FINAL CONFIG_FILE %s\n", CONFIG_FILE)); 
 
 }
+
+//print_help()
+//input - none
+//output - none
+//Prints the help information about how to use http_libcurl_comm
+void print_help(void){
+  fprintf(stderr, "Usage: http_libcurl_comm [-h] -g|-o|-p|-d -u <url> [<message>]\n");
+  fprintf(stderr, "    -h, --help     Print help text\n");
+  fprintf(stderr, "    -g, --get      Get message from specified URL\n");
+  fprintf(stderr, "    -o, --post     Post message to specified URL\n");
+  fprintf(stderr, "    -p, --put      Put message at specified URL\n");
+  fprintf(stderr, "    -d, --delete   Delete message from specified URL\n");
+  fprintf(stderr, "    -u, --url      URL to communcate with\n");
+  fprintf(stderr, " NOTE: Maximum message size is limited to 10,000 characters\n");
+}
+
 
 static void process_config_file(void){
   D(syslog(LOG_INFO, "process_config_file\n"));
@@ -625,7 +673,6 @@ static void process_config_file(void){
   D(syslog(LOG_INFO, "STATUS_SERVER_URL %s\n", AWS_STATUS_SERVER_URL)); 
   D(syslog(LOG_INFO, "SCHEDULE_SERVER_URL %s\n", AWS_SCHEDULE_SERVER_URL)); 
   D(syslog(LOG_INFO, "LOG_FILE %s\n", LOG_FILE)); 
-
 
   FILE *file = NULL;
 
@@ -654,17 +701,15 @@ static void process_config_file(void){
   D(syslog(LOG_INFO, "SCHEDULE_SERVER_URL %s\n", AWS_SCHEDULE_SERVER_URL)); 
   D(syslog(LOG_INFO, "LOG_FILE %s\n", LOG_FILE)); 
 
-
   fclose(file);
 }
 
 int main(int argc, char **argv){
 
-
   openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON); //configure syslog information and parameters
   syslog(LOG_INFO, "Starting thermostat\n");
 
-  process_arguments();
+  process_arguments(argc, argv);
 
   process_config_file();  
 

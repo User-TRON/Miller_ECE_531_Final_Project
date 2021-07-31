@@ -6,6 +6,6 @@ rm ./thermostat
 rm ./thermostat.o
 make -f makefile-x86
 ../thermocouple/tcsimd
-./thermostat
+./thermostat -c ./thermostat.config
 tail -f /var/log/syslog
 
