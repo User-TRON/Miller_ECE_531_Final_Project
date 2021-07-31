@@ -116,27 +116,21 @@
 <!--/////////////////MAIN///////////////////-->
 <!DOCTYPE html>
 <html>
+<head>
+<style>
+h1 {text-align: center;}
+h2 {text-align: center;}
+</style>
+</head>
+
 <body>
 <h1>ECE 531 Thermostat Control</h1>
-<meta http-equiv="refresh" content="2" > 
-
+<h2>Nathaniel Miller</h2>
+<meta http-equiv="refresh" content="200" > 
 
 <?php
   $sql_connection = setup_sql_connection();
   date_default_timezone_set('America/Denver');
-?>
-
-
-<h2>Current Temperature at Thermostat</h2>
-<?php
-  $result = get_status($sql_connection);
-  print_current_temp($result);
-?>
-
-<h2>Current Set Temperature</h2>
-<?php
-  $result = get_status($sql_connection);
-  print_set_temp($result);
 ?>
 
 <!-- Change Schedule -->
@@ -156,41 +150,8 @@
   </table>
 </form>
 
-
-<h2>Current Power</h2>
-<?php
-  $result = get_status($sql_connection);
-  print_power($result);
-?>
-
-<h2>Current Time at Thermostat</h2>
-<?php
-  print_current_time();
-?>
-
-<h2>Time of Last Update from Thermostat</h2>
-<?php
-  $result = get_status($sql_connection);
-  print_last_updated_timestamp($result);
-?>
-
-<h2>Thermostat Schedule</h2>
-<table border="1" cellpadding="2" cellspacing="2">
-  <tr>
-    <td>ID</td>
-    <td>DAY</td>
-    <td>TIME</td>
-    <td>TEMPERATURE</td>
-  </tr>
-<?php
-  $result = get_thermostat_schedule($sql_connection);
-  print_thermostat_program_table($result);
-?>
-
-</table>
-
 <!-- Change Schedule -->
-<h2>Add New Thermostat Schedule</h2>
+<h3>Add New Thermostat Schedule</h3>
 <form method="post" action="thermostat_schedule_server.php">
   <table border="0">
     <tr>
@@ -225,22 +186,16 @@
   </table>
 </form>
 
-<h2>Status Debug</h2>
-<table border="1" cellpadding="2" cellspacing="2">
-  <tr>
-    <td>ID</td>
-    <td>TIME_LAST_PROGRAMMED</td>
-    <td>TIME_LAST_UPDATE</td>
-    <td>CURR_TEMP</td>
-    <td>SET_TEMP</td>
-    <td>POWER</td>
-    <td>NEW_TEMP</td>
-  </tr>
-<?php
-  $result = get_status($sql_connection);
-  print_status_table($result);
-?>
-</table>
+<div id="Status">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.0/jquery.min.js"></script>
+<script type="text/javascript">
+    var auto_refresh = setInterval(
+    function ()
+    {
+    $('#Status').load('schedule.php');
+    }, 1000); // refresh every 1000 milliseconds
+</script>
+</div>
 
 <!-- Clean up. -->
 <?php
