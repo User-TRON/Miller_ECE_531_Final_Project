@@ -1,5 +1,5 @@
-//<Path to buildroot>/output/host/usr/bin/arm-linux-gcc -o thermostat -lcurl -uClibc -lc thermostat.c 
-///home/nathan/Documents/UNM/ECE_531/local_buildroot/buildroot-2021.05/output/host/usr/bin/arm-linux-gcc -o thermostat -lcurl -uClibc -lc thermostat.c 
+//<Path to buildroot>/output/host/usr/bin/arm-linux-gcc -o thermostat -lcurl -uClibc -lc -ld thermostat.c 
+///home/nathan/Documents/UNM/ECE_531/local_buildroot/buildroot-2021.05/output/host/usr/bin/arm-linux-gcc -o thermostat -lcurl -uClibc -lc -ld thermostat.c 
 // ^ Compilation Command
 
 //***************************
@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <string.h>
 #include <curl/curl.h>
+#include <math.h>
 
 #define true 1
 #define false 0
@@ -104,6 +105,7 @@ static void extract_server_schedule(void);
 static void add_schedule(struct ScheduleStruct new_schedule);
 static void delete_schedule(void);
 static void print_schedule(void);
+static void update_server(void);
 
 static void read_server_status(void){
   D(syslog(LOG_INFO, "Read server config\n"));
@@ -247,6 +249,35 @@ static void delete_schedule(void){
 
 }
 
+static void update_server(void){
+  D(syslog(LOG_INFO, "Update server\n"));
+
+  char temp[1024];
+
+  //test
+  status.curr_temp=round(thermocouple_temperature);
+
+  snprintf(temp, sizeof(temp), "%s/?id=%i&&curr_temp=%i&&set_temp=%i&&power=%i", AWS_STATUS_SERVER_URL, status.id, status.curr_temp, status.set_temp, status.power);
+
+  D(syslog(LOG_INFO, "~~~SEND URL %s\n", temp));
+
+//  strcpy(temp, AWS_STATUS_SERVER_URL);
+
+
+  curl_init(temp);
+//  curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); //configure curl for get request
+
+  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT"); //configure curl to ask for PUT request
+//  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, message); //add message contents to POST request
+  curl_run();
+  curl_cleanup();
+
+//  curl -H "Content-Type: application/json" -X PUT -d '{"username":"nate","password":"test"}' 'http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php/?id=1&&curr_temp=64&&set_temp=111&&power=1'
+
+
+}
+
+
 //WriteMemoryCallback()
 //input - void *contents - new response string
 //      - size_t size - size of new response string
@@ -387,49 +418,20 @@ static void _do_work(void){
 
     //read config from server
     read_server_status();
+
     //read data from thermocouple
     read_thermocouple();
+
     //determine heater power state
     read_server_schedule();
-    //set heater power
-    //write data to server
 
+    //set heater power
+
+    //write data to server
+    update_server();
     //sleep
     sleep(CONFIG_SLEEP);
 
-/*    if(usleep(999000) != 0){ //sleep for just under 1 second and confirm sucess
-      syslog(LOG_ERR, ERROR_USLEEP_FORMAT, strerror(errno)); //log error  and exit
-      exit(ERR_USLEEP);
-    }
-
-    sec = time(NULL);
-    if((sec < prev_sec) || (sec > prev_sec+1)){ //check if returned time is valid
-      syslog(LOG_ERR, ERROR_TIME_FORMAT, strerror(errno));  //log error and exit
-      exit(ERR_TIME);
-    }
-
-    while(sec < (prev_sec+1)){ //while current time is not 1 second past previous time
-      if(usleep(1000) != 0){ //sleep for 1000th of a second and confirm sucess
-        syslog(LOG_ERR, ERROR_USLEEP_FORMAT, strerror(errno)); //log error  and exit
-        exit(ERR_USLEEP);
-      }
-
-      sec = time(NULL);
-      if((sec < prev_sec) || (sec > prev_sec+1)){//check if returned time is valid
-        syslog(LOG_ERR, ERROR_TIME_FORMAT, strerror(errno));  //log error and exit
-        exit(ERR_TIME);
-      }
-
-    }
-
-    prev_sec = sec; //save current time to previous
-    if(prev_sec != sec){
-      syslog(LOG_ERR, ERROR_FORMAT, strerror(errno));
-      exit(ERR_SAVE_VAR);
-    }
-
-    syslog(LOG_INFO, "Time = %ld\n", sec); //log current time
-   */
   }
 }
 
