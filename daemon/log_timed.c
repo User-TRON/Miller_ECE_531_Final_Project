@@ -21,10 +21,14 @@
 #define true 1
 #define false 0
 
-enum error_type{OK=0, ERR_FORK, ERR_SETSID, ERR_CHDIR, ERR_WTF};
+enum error_type{OK=0, ERR_FORK, ERR_SETSID, ERR_CHDIR, ERR_NO_LOG_FILE, ERR_DISABLE_PRINT, ERR_USLEEP, ERR_TIME, ERR_SAVE_VAR, ERR_WTF};
 
 #define DAEMON_NAME "log_timed"
-#define ERROR_FORMAT "Recieved Errno %s"
+#define ERROR_FORMAT "Received Errno %s"
+#define ERROR_TIME_FORMAT "Received time errno %S"
+#define ERROR_USLEEP_FORMAT "Received usleep errno %S"
+
+#define LOG_FILE_NAME "/var/log/messages"
 
 //_signal_handler()
 //input - const int signal
@@ -56,16 +60,36 @@ static void _do_work(void){
   syslog(LOG_INFO, "Initial Time since Epoch = %ld\n", sec);
 
   for(int i=0; true; i++){ //infinite loop
-    usleep(999000); //sleep for just under 1 second
+    if(usleep(999000) != 0){ //sleep for just under 1 second and confirm sucess
+      syslog(LOG_ERR, ERROR_USLEEP_FORMAT, strerror(errno)); //log error  and exit
+      exit(ERR_USLEEP);
+    }
 
     sec = time(NULL);
-    
+    if((sec < prev_sec) || (sec > prev_sec+1)){ //check if returned time is valid
+      syslog(LOG_ERR, ERROR_TIME_FORMAT, strerror(errno));  //log error and exit
+      exit(ERR_TIME);
+    }
+
     while(sec < (prev_sec+1)){ //while current time is not 1 second past previous time
-      usleep(1000); //short sleep
+      if(usleep(1000) != 0){ //sleep for 1000th of a second and confirm sucess
+        syslog(LOG_ERR, ERROR_USLEEP_FORMAT, strerror(errno)); //log error  and exit
+        exit(ERR_USLEEP);
+      }
+
       sec = time(NULL);
+      if((sec < prev_sec) || (sec > prev_sec+1)){//check if returned time is valid
+        syslog(LOG_ERR, ERROR_TIME_FORMAT, strerror(errno));  //log error and exit
+        exit(ERR_TIME);
+      }
+
     }
 
     prev_sec = sec; //save current time to previous
+    if(prev_sec != sec){
+      syslog(LOG_ERR, ERROR_FORMAT, strerror(errno));
+      exit(ERR_SAVE_VAR);
+    }
 
     syslog(LOG_INFO, "Time = %ld\n", sec); //log current time
   }
@@ -92,15 +116,22 @@ int main(void){
     return ERR_SETSID;
   }
 
-  close(STDIN_FILENO); //disable print functionality
-  close(STDOUT_FILENO);
-  close(STDERR_FILENO);
+  //disable print functionality
+  if((close(STDIN_FILENO) !=0) || (close(STDOUT_FILENO) !=0) || (close(STDERR_FILENO)!=0)){
+    syslog(LOG_ERR, ERROR_FORMAT, strerror(errno)); //log disable print error
+    return ERR_DISABLE_PRINT;
+  }
 
   umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH); //set file permissions
 
   if(chdir("/")<0){ //set root directory
     syslog(LOG_ERR, ERROR_FORMAT, strerror(errno)); //log error setting root directory
     return ERR_CHDIR;
+  }
+
+  if(access(LOG_FILE_NAME, F_OK) != 0){ //check if log file exists
+    syslog(LOG_ERR, ERROR_FORMAT, strerror(errno)); //log error and exit
+    return ERR_NO_LOG_FILE;
   }
 
   signal(SIGTERM, _signal_handler); //send signals to _signal_handler function

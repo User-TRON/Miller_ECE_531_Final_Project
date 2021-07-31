@@ -2,3 +2,7 @@ main
 test
 *.o
 *.out
+daemon/log_timed
+
+http_libcurl_comm
+smart_thermostat/thermostat
