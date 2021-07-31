@@ -24,7 +24,6 @@
 #define true 1
 #define false 0
 
-enum error_type{OK=0, ERR_FORK, ERR_SETSID, ERR_CHDIR, ERR_NO_LOG_FILE, ERR_DISABLE_PRINT, ERR_USLEEP, ERR_TIME, ERR_SAVE_VAR, INIT_ERR, HTTP_ERR, INPUT_ERR, ERR_WTF};
 
 #define DAEMON_NAME "thermostat"
 #define ERROR_FORMAT "Received Errno %s"
@@ -42,19 +41,15 @@ enum error_type{OK=0, ERR_FORK, ERR_SETSID, ERR_CHDIR, ERR_NO_LOG_FILE, ERR_DISA
 #  define D(x)
 #endif //Debug macro from Allen Holub's book "Enough Rope to Shoot Yourself in the Foot: Rules for C and C++ Programming"
 
-
-
 #define THERMOCOUPLE_FILE "/tmp/temp"
 #define HEATER_POWER_FILE "/tmp/status"
 #define AWS_STATUS_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php"
 #define AWS_SCHEDULE_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_schedule_server.php"
 
-
 #define CONFIG_SLEEP 5
 #define MAX_MESSAGE_SIZE 10000
 
-char message[MAX_MESSAGE_SIZE]="";
-long return_code=-1;
+enum error_type{OK=0, ERR_FORK, ERR_SETSID, ERR_CHDIR, ERR_NO_LOG_FILE, ERR_DISABLE_PRINT, ERR_USLEEP, ERR_TIME, ERR_SAVE_VAR, INIT_ERR, HTTP_ERR, INPUT_ERR, ERR_WTF};
 
 struct MemoryStruct {
   char *memory;
@@ -73,6 +68,7 @@ struct StatusStruct {
 };
 
 struct StatusStruct status;
+struct StatusStruct thermostat_status;
 
 enum DayEnum{Monday=1, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday};
 
@@ -88,10 +84,15 @@ struct ScheduleStruct *schedule_head = NULL;
 struct ScheduleStruct *schedule_end = NULL;
 struct ScheduleStruct *schedule_current = NULL;
 
+char message[MAX_MESSAGE_SIZE]="";
+long return_code=-1;
+
 CURL *curl;
 CURLcode res;
 
 double thermocouple_temperature = 0.0;
+
+int overide_temp = -200; //-200 = NULL
 
 static void read_server_status(void);
 static void read_server_schedule(void);
@@ -106,6 +107,9 @@ static void add_schedule(struct ScheduleStruct new_schedule);
 static void delete_schedule(void);
 static void print_schedule(void);
 static void update_server(void);
+static void set_heater_power(void);
+static void set_temp(void);
+static void write_heater_file(void);
 
 static void read_server_status(void){
   D(syslog(LOG_INFO, "Read server config\n"));
@@ -151,7 +155,11 @@ static void extract_server_status(void){
     status.power = strtol(token, NULL, 10);
 
     token = strtok(NULL, ":"); token = strtok(NULL, "\"");
-    status.new_temp = strtol(token, NULL, 10);
+    if(strcmp("NULL", token) == 0){
+      status.new_temp = -200;
+    } else {
+      status.new_temp = strtol(token, NULL, 10);
+    }
 
     D(syslog(LOG_INFO, "ID                   = %i", status.id));
     D(syslog(LOG_INFO, "TIME_LAST_PROGRAMMED = %lu", status.time_last_programmed));
@@ -249,13 +257,41 @@ static void delete_schedule(void){
 
 }
 
+static void set_heater_power(void){
+//  status.id already set, skip
+
+  thermostat_status.id = status.id;
+  thermostat_status.time_last_programmed = status.time_last_programmed;
+  thermostat_status.time_last_update = status.time_last_update;
+
+  status.curr_temp = round(thermocouple_temperature);
+  thermostat_status.curr_temp = status.curr_temp;
+
+  thermostat_status.new_temp = status.new_temp;
+
+  set_temp();
+  status.set_temp = thermostat_status.set_temp;
+
+  status.power = thermostat_status.power;
+
+//toggle heater power
+  write_heater_file();
+}
+
+static void set_temp(void){
+  D(syslog(LOG_INFO, "Set temp\n"));
+
+}
+
+static void write_heater_file(void){
+  D(syslog(LOG_INFO, "Write Heater File\n"));
+
+}
+
 static void update_server(void){
   D(syslog(LOG_INFO, "Update server\n"));
 
   char temp[1024];
-
-  //test
-  status.curr_temp=round(thermocouple_temperature);
 
   snprintf(temp, sizeof(temp), "%s/?id=%i&&curr_temp=%i&&set_temp=%i&&power=%i", AWS_STATUS_SERVER_URL, status.id, status.curr_temp, status.set_temp, status.power);
 
@@ -272,11 +308,7 @@ static void update_server(void){
   curl_run();
   curl_cleanup();
 
-//  curl -H "Content-Type: application/json" -X PUT -d '{"username":"nate","password":"test"}' 'http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php/?id=1&&curr_temp=64&&set_temp=111&&power=1'
-
-
 }
-
 
 //WriteMemoryCallback()
 //input - void *contents - new response string
@@ -304,7 +336,6 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 
   return realsize;
 }
-
 
 //curl_init()
 //input - none
@@ -365,8 +396,6 @@ static void curl_cleanup(void){
 
 }
 
-
-
 static void read_thermocouple(void){
   syslog(LOG_INFO, "Read thermocouple\n");
 
@@ -426,9 +455,11 @@ static void _do_work(void){
     read_server_schedule();
 
     //set heater power
+    set_heater_power();
 
     //write data to server
     update_server();
+
     //sleep
     sleep(CONFIG_SLEEP);
 
