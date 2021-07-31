@@ -46,7 +46,7 @@
 #define AWS_STATUS_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php"
 #define AWS_SCHEDULE_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_schedule_server.php"
 
-#define CONFIG_SLEEP 5
+#define CONFIG_SLEEP 2
 #define MAX_MESSAGE_SIZE 10000
 
 enum error_type{OK=0, ERR_FORK, ERR_SETSID, ERR_CHDIR, ERR_NO_LOG_FILE, ERR_DISABLE_PRINT, ERR_USLEEP, ERR_TIME, ERR_SAVE_VAR, INIT_ERR, HTTP_ERR, INPUT_ERR, ERR_WTF};
@@ -93,6 +93,8 @@ CURLcode res;
 double thermocouple_temperature = 0.0;
 
 int overide_temp = -200; //-200 = NULL
+int time_delta; //differnce between device time and server time on boot
+time_t sec;
 
 static void read_server_status(void);
 static void read_server_schedule(void);
@@ -116,6 +118,10 @@ static void read_server_status(void){
 
   curl_init(AWS_STATUS_SERVER_URL);
   curl_run();
+
+  sec = time(NULL);
+  time_delta = status.time_last_programmed - sec;
+
   extract_server_status();
   curl_cleanup();
 
@@ -155,7 +161,8 @@ static void extract_server_status(void){
     status.power = strtol(token, NULL, 10);
 
     token = strtok(NULL, ":"); token = strtok(NULL, "\"");
-    if(strcmp("NULL", token) == 0){
+    syslog(LOG_INFO, "~~~~~~~~~~~~%s\n", token);
+    if(strcmp("null}]", token) == 0){
       status.new_temp = -200;
     } else {
       status.new_temp = strtol(token, NULL, 10);
@@ -266,12 +273,11 @@ static void set_heater_power(void){
 
   status.curr_temp = round(thermocouple_temperature);
   thermostat_status.curr_temp = status.curr_temp;
-
   thermostat_status.new_temp = status.new_temp;
 
   set_temp();
-  status.set_temp = thermostat_status.set_temp;
 
+  status.set_temp = thermostat_status.set_temp;
   status.power = thermostat_status.power;
 
 //toggle heater power
@@ -281,10 +287,65 @@ static void set_heater_power(void){
 static void set_temp(void){
   D(syslog(LOG_INFO, "Set temp\n"));
 
+  //check schedule temp
+//  struct timeval now;
+//  now.tv_sec = thermostat_status.time_last_programmed;
+//  settimeofday(&now, NULL);
+
+//  time_t rawtime;
+//  struct tm *info;
+//  time(&rawtime);
+//  rawtime->tv_sec = thermostat_status_time_last_programmed;
+//  int today = localtime(&rawtime)->tm_wday + 1;
+//  D(syslog(LOG_INFO, "Today is %i\n", today));
+//  D(syslog(LOG_INFO, "Today sec %li", time(NULL)));
+
+  int time_now = time(NULL) + time_delta;
+
+  D(syslog(LOG_INFO, "time() %i\n", time(NULL)));
+  D(syslog(LOG_INFO, "*!*!*!**!*!*!*!**!Current time %d\n", time_now));
+
+  thermostat_status.set_temp = 70;
+
+  //if different, set new to null
+//  if(thermostat_status.set_temp != status.set_temp){
+//    D(syslog(LOG_INFO, "Schedule Change\n"));
+//    thermostat_status.new_temp = -200;
+//  }
+
+  //set override
+//  if(thermostat_status.new_temp != -200){
+//    D(syslog(LOG_INFO, "OVERRIDE TEMP\n")); 
+//    thermostat_status.set_temp = thermostat_status.new_temp;
+//  }
+
+  //turn heater on or off
+  if(thermostat_status.curr_temp < thermostat_status.set_temp){
+    thermostat_status.power = 1;
+  } else {
+    thermostat_status.power = 0;
+  }
+
 }
 
 static void write_heater_file(void){
   D(syslog(LOG_INFO, "Write Heater File\n"));
+
+  FILE *file = fopen(HEATER_POWER_FILE, "w");
+  if(file == NULL){
+    syslog(LOG_ERR, ERROR_FORMAT, strerror(errno)); //log session error
+    return;
+  }
+
+  if(thermostat_status.power == 1){
+    D(syslog(LOG_INFO, "POWER ON\n"));
+    fprintf(file, "ON");
+  }else{
+    D(syslog(LOG_INFO, "POWER_OFF\n"));
+    fprintf(file, "OFF");
+  }
+
+  fclose(file);
 
 }
 
@@ -442,7 +503,7 @@ static void _do_work(void){
   prev_sec = sec;
 
   syslog(LOG_INFO, "Initial Time since Epoch = %ld\n", sec);
-
+  
   while(true){ //infinite loop
 
     //read config from server
