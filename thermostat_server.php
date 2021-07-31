@@ -118,7 +118,7 @@
 <html>
 <body>
 <h1>ECE 531 Thermostat Control</h1>
-<meta http-equiv="refresh" content="10" > 
+<meta http-equiv="refresh" content="2" > 
 
 
 <?php

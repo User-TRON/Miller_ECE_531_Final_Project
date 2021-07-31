@@ -6,6 +6,10 @@
 function process_get($sql_connection){
   echo "process_get\n";
 
+  $time_last_update = time();
+  $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_UPDATE='$time_last_update' WHERE ID='1'");
+
+
   $result = mysqli_query($sql_connection, "SELECT * FROM status");
   $rows = array();
 
