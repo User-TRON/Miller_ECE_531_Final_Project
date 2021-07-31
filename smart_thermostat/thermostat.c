@@ -43,8 +43,6 @@
 
 #define THERMOCOUPLE_FILE "/tmp/temp"
 #define HEATER_POWER_FILE "/tmp/status"
-#define AWS_STATUS_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php"
-#define AWS_SCHEDULE_SERVER_URL "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_schedule_server.php"
 
 #define CONFIG_SLEEP 2
 #define MAX_MESSAGE_SIZE 10000
@@ -84,6 +82,12 @@ struct ScheduleStruct *schedule_head = NULL;
 struct ScheduleStruct *schedule_end = NULL;
 struct ScheduleStruct *schedule_current = NULL;
 
+char AWS_STATUS_SERVER_URL[100]="";
+char AWS_SCHEDULE_SERVER_URL[100]="";
+char LOG_FILE[100]="";
+char CONFIG_FILE[100]="";
+
+
 char message[MAX_MESSAGE_SIZE]="";
 long return_code=-1;
 
@@ -112,6 +116,9 @@ static void update_server(void);
 static void set_heater_power(void);
 static void set_temp(void);
 static void write_heater_file(void);
+static void process_config_file(void);
+static void process_arguments(void);
+
 
 static void read_server_status(void){
   D(syslog(LOG_INFO, "Read server config\n"));
@@ -292,13 +299,13 @@ static void delete_schedule(void){
 static void set_heater_power(void){
 //  status.id already set, skip
 
-  thermostat_status.id = status.id;
+  //thermostat_status.id = status.id;
   thermostat_status.time_last_programmed = status.time_last_programmed;
   thermostat_status.time_last_update = status.time_last_update;
 
   status.curr_temp = round(thermocouple_temperature);
   thermostat_status.curr_temp = status.curr_temp;
-  thermostat_status.new_temp = status.new_temp;
+  //thermostat_status.new_temp = status.new_temp;
 
   set_temp();
 
@@ -362,6 +369,23 @@ static void set_temp(void){
     D(syslog(LOG_INFO, "Decided on id %i temp %i\n", set_schedule.id, set_schedule.temperature));
     thermostat_status.set_temp = set_schedule.temperature;
   }
+
+  //check override
+  if(status.new_temp != -200){
+    thermostat_status.new_temp = status.new_temp;
+    thermostat_status.id = status.id;
+    D(syslog(LOG_INFO, "Got NEW TEMP %i\n", status.new_temp));
+  }
+
+  if( (thermostat_status.new_temp != -200) && (thermostat_status.id == status.id) ){
+    D(syslog(LOG_INFO, "OVERRIDE MODE Temp = %i\n", thermostat_status.new_temp));   
+    thermostat_status.set_temp = thermostat_status.new_temp;
+  } else if (thermostat_status.id != status.id){
+    D(syslog(LOG_INFO, "REMOVE OVERRIDE\n"));
+    thermostat_status.new_temp = -200;
+    thermostat_status.id = status.id;
+  }
+
   //if different, set new to null
 //  if(thermostat_status.set_temp != status.set_temp){
 //    D(syslog(LOG_INFO, "Schedule Change\n"));
@@ -394,10 +418,10 @@ static void write_heater_file(void){
 
   if(thermostat_status.power == 1){
     D(syslog(LOG_INFO, "POWER ON\n"));
-    fprintf(file, "ON");
+    fprintf(file, "ON:%li",time(NULL));
   }else{
     D(syslog(LOG_INFO, "POWER_OFF\n"));
-    fprintf(file, "OFF");
+    fprintf(file, "OFF:%li",time(NULL));
   }
 
   fclose(file);
@@ -582,10 +606,67 @@ static void _do_work(void){
   }
 }
 
-int main(void){
+static void process_arguments(void){
+  D(syslog(LOG_INFO, "process_arguments\n")); 
+ 
+
+  D(syslog(LOG_INFO, "CONFIG_FILE %s\n", CONFIG_FILE)); 
+
+  if(strcmp(CONFIG_FILE, "")==0)
+    strcpy(CONFIG_FILE,"./thermostat.config");
+
+  D(syslog(LOG_INFO, "CONFIG_FILE %s\n", CONFIG_FILE)); 
+
+}
+
+static void process_config_file(void){
+  D(syslog(LOG_INFO, "process_config_file\n"));
+
+  D(syslog(LOG_INFO, "STATUS_SERVER_URL %s\n", AWS_STATUS_SERVER_URL)); 
+  D(syslog(LOG_INFO, "SCHEDULE_SERVER_URL %s\n", AWS_SCHEDULE_SERVER_URL)); 
+  D(syslog(LOG_INFO, "LOG_FILE %s\n", LOG_FILE)); 
+
+
+  FILE *file = NULL;
+
+  if((file = fopen(CONFIG_FILE, "r")) == NULL){
+//    syslog(LOG_INFO, "Unable to read Thermocouple file, will try again\n");
+    return;
+  }
+
+  fscanf(file, "STATUS_SERVER_URL=%s\n", AWS_STATUS_SERVER_URL);
+  fscanf(file, "SCHEDULE_SERVER_URL=%s\n", AWS_SCHEDULE_SERVER_URL);
+  fscanf(file, "LOG_FILE=%s\n", LOG_FILE);
+
+  D(syslog(LOG_INFO, "STATUS_SERVER_URL %s", AWS_STATUS_SERVER_URL)); 
+  D(syslog(LOG_INFO, "SCHEDULE_SERVER_URL %s", AWS_SCHEDULE_SERVER_URL)); 
+  D(syslog(LOG_INFO, "LOG_FILE %s", LOG_FILE)); 
+
+//  syslog(LOG_INFO, "Got thermocouple temperature = %f\n", thermocouple_temperature);
+  if(strcmp(AWS_STATUS_SERVER_URL, "")==0)
+    strcpy(AWS_STATUS_SERVER_URL, "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_status_server.php");
+  if(strcmp(AWS_SCHEDULE_SERVER_URL,"")==0)
+    strcpy(AWS_SCHEDULE_SERVER_URL, "http://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_schedule_server.php");
+  if(strcmp(LOG_FILE,"")==0)
+    strcpy(LOG_FILE, "/var/log/messages");
+
+  D(syslog(LOG_INFO, "STATUS_SERVER_URL %s\n", AWS_STATUS_SERVER_URL)); 
+  D(syslog(LOG_INFO, "SCHEDULE_SERVER_URL %s\n", AWS_SCHEDULE_SERVER_URL)); 
+  D(syslog(LOG_INFO, "LOG_FILE %s\n", LOG_FILE)); 
+
+
+  fclose(file);
+}
+
+int main(int argc, char **argv){
+
 
   openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON); //configure syslog information and parameters
   syslog(LOG_INFO, "Starting thermostat\n");
+
+  process_arguments();
+
+  process_config_file();  
 
   pid_t pid=fork(); //fork to prevent blocking syslogd or initd
 
