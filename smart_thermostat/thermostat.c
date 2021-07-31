@@ -82,10 +82,10 @@ struct ScheduleStruct *schedule_head = NULL;
 struct ScheduleStruct *schedule_end = NULL;
 struct ScheduleStruct *schedule_current = NULL;
 
-char AWS_STATUS_SERVER_URL[100]="";
-char AWS_SCHEDULE_SERVER_URL[100]="";
-char LOG_FILE[100]="";
-char CONFIG_FILE[100]="";
+char AWS_STATUS_SERVER_URL[200]="";
+char AWS_SCHEDULE_SERVER_URL[200]="";
+char LOG_FILE[200]="";
+char CONFIG_FILE[200]="";
 
 
 char message[MAX_MESSAGE_SIZE]="";
@@ -618,7 +618,7 @@ static void process_arguments(int argc, char** argv){
   } 
  
   for(int i=1; i<argc; i++){ 
-    D(fprintf(stderr, "%d %s\n", i, argv[i])); 
+    D(syslog(LOG_INFO, "%d %s\n", i, argv[i])); 
  
     if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help") ){ 
       print_help(); 
@@ -656,14 +656,9 @@ static void process_arguments(int argc, char** argv){
 //output - none
 //Prints the help information about how to use http_libcurl_comm
 void print_help(void){
-  fprintf(stderr, "Usage: http_libcurl_comm [-h] -g|-o|-p|-d -u <url> [<message>]\n");
+  fprintf(stderr, "Usage: thermostat [-h] [-c config_file_location]\n");
   fprintf(stderr, "    -h, --help     Print help text\n");
-  fprintf(stderr, "    -g, --get      Get message from specified URL\n");
-  fprintf(stderr, "    -o, --post     Post message to specified URL\n");
-  fprintf(stderr, "    -p, --put      Put message at specified URL\n");
-  fprintf(stderr, "    -d, --delete   Delete message from specified URL\n");
-  fprintf(stderr, "    -u, --url      URL to communcate with\n");
-  fprintf(stderr, " NOTE: Maximum message size is limited to 10,000 characters\n");
+  fprintf(stderr, "    -c, --config   specify config file location, otherwise default ./thermostat.config\n");
 }
 
 
