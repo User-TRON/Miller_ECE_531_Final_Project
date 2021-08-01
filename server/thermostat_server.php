@@ -66,7 +66,7 @@ h2 {text-align: center;}
 </form>
 
 <div id="Status">
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.0/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.3.0/jquery.min.js"></script>
 <script type="text/javascript">
     var auto_refresh = setInterval(
     function ()
