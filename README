@@ -1,0 +1,47 @@
+ECE 531 Intro to IoT Final Project
+Nathaniel Miller
+July 31, 2021
+
+Contained in this tar file are all of the runtime components of the client Thermostat arm emulator running in a QEMU VM.  To start the VM (which can take a minute or two to boot), run the command:
+./project.sh
+
+
+To access the Thermostat Control Website, go to:
+https://ec2-18-119-152-234.us-east-2.compute.amazonaws.com/thermostat_server.php
+**NOTE** The webpage uses https but only has a self-signed certificate.  You will need to continue to site on your browser to see the webpage.
+
+
+All credentials for the QEMU VM and the AWS server are contained in:
+./credentials.txt
+
+
+./nathan.pem is the security needed to access the AWS server
+
+
+All source code is in this folder and on the github repo in the server and smart_thermostat folders:
+https://github.com/User-TRON/Miller_ECE_531_Final_Project/tree/develop
+
+
+In the QEMU image, the thermostat and thermocouple executables will start on boot with init.  Executables are located in /usr/sbin.  You can also run the /usr/sbin/thermostat executable via command line with -c [config file path] and -h options.  Daemons are located in /etc/init.d/.  The default config file is located in /etc/thermostat/.
+
+
+Functionality:
+The thermostat client running on the arm qemu VM will run on boot as a daemon.  It reads the temperature from specified file, it can be programmed with a complex schedule based upon any day of the week and time of day.  The user can also override the scheduled temperatures with a custom temperature until the next programmed schedule change.  The current temperature, set temperature, and heater power are sent to the server.  Lastly, the client writes the heater status (on/off) and a timestamp to file.  The client toggles heater power to keep it as close to the desired temperature as possible.  All logs are sent to /var/log/messages (custom log location is currently not working, possibly due to missing library support).  Client VM uses recent Linux kernel and has password protection for user/root accounts.
+
+The AWS EC2 server uses a mysql database to store and manage the thermostat status and schedule for modification by the user.  The web interface, which is delivered over https (using a self-signed certificate, so you will get a warning in your browser), The web page auto-updates all data fields every few seconds when the client is running.  The web page allows for a manual temperature to be set as well as adding a new schedule or deleting current thermostat schedules.  The day, time of day, and temperature can be configured for each scheduled change.  After a manual change, new schedule, or schedule delete is requested, a confirmation page is displayed.  Simply go back in your browser to return to the main thermostat control web page.
+
+
+**NOTE**
+It is assumed that the following packages are installed to run the qemu VM:
+        ipxe-qemu-256k-compat-efi-roms/focal,focal,now 1.0.0+git-20150424.a25a16d-0ubuntu4 all [installed,automatic]
+        ipxe-qemu/focal-updates,focal-updates,now 1.0.0+git-20190109.133f4c4-0ubuntu3.2 all [installed,automatic]
+        qemu-block-extra/focal-updates,focal-security,now 1:4.2-3ubuntu6.17 amd64 [installed,automatic]
+        qemu-efi-aarch64/focal-updates,focal-updates,focal-security,focal-security,now 0~20191122.bd85bf54-2ubuntu3.2 all [installed,automatic]
+        qemu-efi-arm/focal-updates,focal-updates,focal-security,focal-security,now 0~20191122.bd85bf54-2ubuntu3.2 all [installed,automatic]
+        qemu-system-arm/focal-updates,focal-security,now 1:4.2-3ubuntu6.17 amd64 [installed]
+        qemu-system-common/focal-updates,focal-security,now 1:4.2-3ubuntu6.17 amd64 [installed]
+        qemu-system-data/focal-updates,focal-updates,focal-security,focal-security,now 1:4.2-3ubuntu6.17 all [installed]
+        qemu-system-gui/focal-updates,focal-security,now 1:4.2-3ubuntu6.17 amd64 [installed,automatic]
+        qemu-user-static/focal-updates,focal-security,now 1:4.2-3ubuntu6.17 amd64 [installed]
+        qemu-utils/focal-updates,focal-security,now 1:4.2-3ubuntu6.17 amd64 [installed,automatic]
+
