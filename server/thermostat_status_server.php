@@ -26,7 +26,7 @@ function process_get($sql_connection){
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function process_put($sql_connection){
-  echo "process_put\n";    
+//  echo "process_put\n";    
 
   if( $_GET["id"] ) {
     echo "got id\n";
@@ -42,16 +42,20 @@ function process_put($sql_connection){
     exit();
   }
   else if($_POST["new_temp"]){
-    echo "got new_temp\n";
+//    echo "got new_temp\n";
 
     $id='1';
     $time_last_programmed = time();
     $new_temp = htmlspecialchars($_POST["TEMPERATURE"]);
-    echo $time_last_programmed;
-    echo $new_temp;
+//    echo $time_last_programmed;
+//    echo $new_temp;
     
     if($new_temp != null){
       $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_PROGRAMMED='$time_last_programmed', NEW_TEMP='$new_temp' WHERE ID='$id'");
+      echo "<h2>Set temperature to ";
+      echo $new_temp;
+      echo "&deg;F<h2>\n";
+      echo "<h3>Go back to return to the Thermostat Configuration Webpage<h3>\n";
       exit();
     }
   } 
@@ -95,7 +99,7 @@ function setup_sql_connection(){
 function process_request($sql_connection){
 //  echo "process_request\n";
   $method = $_SERVER['REQUEST_METHOD'];
-  echo "Status Method = $method \n";
+//  echo "Status Method = $method \n";
 
   switch ($method) {
     case 'POST':
