@@ -4,14 +4,15 @@
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function process_get($sql_connection){
-  echo "process_get\n";
+//  echo "process_get\n";
 
   if( $_GET["delete_id"] ) {
     $delete_id = htmlspecialchars($_GET["delete_id"]);
-    echo "got delete_id $delete_id\n"; 
+//    echo "got delete_id $delete_id\n"; 
 
     $result = mysqli_query($sql_connection, "DELETE FROM temp_schedule where id='$delete_id'");
-
+    echo "<h2>Deleted Schedule</h2>\n";
+    echo "<h3>Go Back to Return to the Thermostat Configuration Webpage</h3>\n";
   }else {  
   
 
@@ -41,20 +42,20 @@ function process_get($sql_connection){
 
 
 function process_post($sql_connection){
-  echo "process_post\n";    
+//  echo "process_post\n";    
 
   if( $_POST["submit"] ) {
-    echo "got submit\n";  
+//    echo "got submit\n";  
    
     $day = htmlspecialchars($_POST["DAY"]);
     $time = htmlspecialchars($_POST["TIME"]);
     $temp = htmlspecialchars($_POST["TEMPERATURE"]);
 
-    echo $day;
-    echo "  |  ";
-    echo $time;
-    echo "  |  ";
-    echo $temp;
+//    echo $day;
+//    echo "  |  ";
+//    echo $time;
+//    echo "  |  ";
+//    echo $temp;
 
     $result = mysqli_query($sql_connection, "INSERT INTO temp_schedule (DAY, SET_TIME, TEMP_SET) VALUES ('$day', '$time', '$temp')");
 
@@ -62,6 +63,9 @@ function process_post($sql_connection){
     $time_last_programmed = time();
 
     $result = mysqli_query($sql_connection, "UPDATE status SET TIME_LAST_PROGRAMMED='$time_last_programmed' WHERE ID='$id'");
+    
+    echo "<h2>New Schedule Set<h2>\n";
+    echo "<h3>Go back to return to the Thermostat Configuration Webpage<h3>\n";
 
      exit();
    }
@@ -136,7 +140,7 @@ function setup_sql_connection(){
 function process_request($sql_connection){
 //  echo "process_request\n";
   $method = $_SERVER['REQUEST_METHOD'];
-  echo "Schedule Method = $method \n";
+//  echo "Schedule Method = $method \n";
 
   switch ($method) {
     case 'GET':
