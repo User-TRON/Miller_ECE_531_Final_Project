@@ -1,6 +1,5 @@
 <?php
-
-//declare(strict_types=1);
+//handles updating thermostat schedule and requests for schedule data
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function process_get($sql_connection){
@@ -25,17 +24,6 @@ function process_get($sql_connection){
 
   echo json_encode($rows);
 
-//  print json_encode($result_rows);
-
-/*  echo "debug print data";
-  $result = mysqli_query($sql_connection, "SELECT * FROM temp_schedule");
-
-  while($query_data = mysqli_fetch_row($result)) {
-    echo $query_data[0];
-    echo $query_data[1];
-    echo $query_data[2];
-    echo $query_data[3];
-  }*/
   }
   exit();
 }//process_get
@@ -50,12 +38,6 @@ function process_post($sql_connection){
     $day = htmlspecialchars($_POST["DAY"]);
     $time = htmlspecialchars($_POST["TIME"]);
     $temp = htmlspecialchars($_POST["TEMPERATURE"]);
-
-//    echo $day;
-//    echo "  |  ";
-//    echo $time;
-//    echo "  |  ";
-//    echo $temp;
 
     $result = mysqli_query($sql_connection, "INSERT INTO temp_schedule (DAY, SET_TIME, TEMP_SET) VALUES ('$day', '$time', '$temp')");
 
@@ -159,11 +141,9 @@ function process_request($sql_connection){
 }
 
 $sql_connection = setup_sql_connection();
-
 process_request($sql_connection);
 
 ?>
-
 
 <!DOCTYPE html>
 <html>
@@ -172,13 +152,8 @@ process_request($sql_connection);
 
 <!-- Clean up. -->
 <?php
-
-//  mysqli_free_result($result);
-//  mysqli_close($connection);
   mysqli_free_result($result);
   mysqli_close($sql_connection);
-
-
 ?>
 
 </body>

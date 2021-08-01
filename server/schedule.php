@@ -1,4 +1,6 @@
 <?php
+  //handles the main webpage tables/data that must be refreshed frequently to update
+
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   function setup_sql_connection(){
     //echo "Setup Database and Connect\n";

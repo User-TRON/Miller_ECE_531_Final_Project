@@ -1,4 +1,6 @@
-<!--/////////////////MAIN///////////////////-->
+<!--/////////////////MAIN///////////////////
+Draws main webpage and calls data refresh from schedule page
+-->
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,7 +14,6 @@ h2 {text-align: center;}
 <h1>ECE 531 Thermostat Control</h1>
 <h2>Nathaniel Miller</h2>
 <meta http-equiv="refresh" content="200" > 
-
 
 <!-- Change Schedule -->
 <h3>Manual Temperature Set (Reset at Next Schedule Change)</h3>
@@ -75,7 +76,6 @@ h2 {text-align: center;}
     }, 1000); // refresh every 1000 milliseconds
 </script>
 </div>
-
 
 </body>
 </html>

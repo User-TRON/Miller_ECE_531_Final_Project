@@ -1,6 +1,5 @@
 <?php
-
-//declare(strict_types=1);
+//handles status updates and requests
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function process_get($sql_connection){
@@ -21,8 +20,6 @@ function process_get($sql_connection){
 
   exit();
 }//process_get
-
-
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function process_put($sql_connection){
@@ -120,7 +117,6 @@ function process_request($sql_connection){
 }
 
 $sql_connection = setup_sql_connection();
-
 process_request($sql_connection);
 
 ?>
@@ -136,7 +132,6 @@ process_request($sql_connection);
 
   mysqli_free_result($result);
   mysqli_close($sql_connection);
-
 
 ?>
 
