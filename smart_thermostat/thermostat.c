@@ -31,7 +31,7 @@
 #define ERROR_USLEEP_FORMAT "Received usleep errno %s"
 
 #define DEBUG 1
-//#undef DEBUG
+#undef DEBUG
 
 #ifdef DEBUG
 #  define D(x) x
@@ -644,7 +644,7 @@ static void process_arguments(int argc, char** argv){
   }
 
   if(strcmp(CONFIG_FILE, "")==0)
-    strcpy(CONFIG_FILE,"./thermostat.config");
+    strcpy(CONFIG_FILE,"/etc/thermostat/thermostat.config");
 
   D(syslog(LOG_INFO, "FINAL CONFIG_FILE %s\n", CONFIG_FILE)); 
 
@@ -671,7 +671,7 @@ static void process_config_file(void){
   FILE *file = NULL;
 
   if((file = fopen(CONFIG_FILE, "r")) == NULL){
-//    syslog(LOG_INFO, "Unable to read Thermocouple file, will try again\n");
+    syslog(LOG_INFO, "Unable to read Thermocouple file, will try again\n");
     return;
   }
 

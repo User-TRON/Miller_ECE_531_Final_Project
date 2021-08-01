@@ -4,5 +4,5 @@ test
 *.out
 daemon/log_timed
 
-http_libcurl_comm
+http_libcurl_comm/http_libcurl_comm
 smart_thermostat/thermostat

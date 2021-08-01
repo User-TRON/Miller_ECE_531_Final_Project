@@ -1,0 +1,25 @@
+BUILDROOT_HOME=/home/nathan/Documents/UNM/ECE_531/local_buildroot/buildroot-2021.05
+
+CC=$(BUILDROOT_HOME)/output/host/usr/bin/arm-linux-gcc
+CCFLAGS=--sysroot=$(BUILDROOT_HOME)/output/staging
+INCLUDES=
+LFLAGS=
+LIBS=-lcurl -uClibc -lc
+
+#SRC=requestor.c
+SRC=http_libcurl_comm.c
+OBJ=$(SRC:.c=.o)
+MAIN=http_libcurl_comm
+
+RM=rm -rf
+
+.c.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+$(MAIN): $(OBJ)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJ) $(LFLAGS) $(LIBS)
+
+all: $(MAIN)
+
+clean:
+	$(RM) $(MAIN) *.o *~
