@@ -31,7 +31,7 @@
 #define ERROR_USLEEP_FORMAT "Received usleep errno %s"
 
 #define DEBUG 1
-#undef DEBUG
+//#undef DEBUG
 
 #ifdef DEBUG
 #  define D(x) x
@@ -417,10 +417,10 @@ static void write_heater_file(void){
 
   if(thermostat_status.power == 1){
     D(syslog(LOG_INFO, "POWER ON\n"));
-    fprintf(file, "ON:%li",time(NULL));
+    fprintf(file, "ON:%i",status.time_last_update);
   }else{
     D(syslog(LOG_INFO, "POWER_OFF\n"));
-    fprintf(file, "OFF:%li",time(NULL));
+    fprintf(file, "OFF:%i",status.time_last_update);
   }
 
   fclose(file);
@@ -693,10 +693,10 @@ static void process_config_file(void){
   D(syslog(LOG_INFO, "FINAL SCHEDULE_SERVER_URL %s\n", AWS_SCHEDULE_SERVER_URL)); 
   D(syslog(LOG_INFO, "FINAL LOG_FILE %s\n", LOG_FILE)); 
 
-  if(strcmp(LOG_FILE,"")!=0)
-    setup_log();
-  else
-  openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON); //configure syslog information and parameters
+//  if(strcmp(LOG_FILE,"")!=0)
+    //setup_log();
+//  else
+//  openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON); //configure syslog information and parameters
 
 
   fclose(file);
@@ -726,13 +726,13 @@ void setup_log(void){
 }
 
 int main(int argc, char **argv){
+
+  openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON); //configure syslog information and parameters
   process_arguments(argc, argv);
 
   process_config_file();  
 
-//  openlog(DAEMON_NAME, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON); //configure syslog information and parameters
   syslog(LOG_INFO, "Starting thermostat\n");
-
 
   pid_t pid=fork(); //fork to prevent blocking syslogd or initd
 
