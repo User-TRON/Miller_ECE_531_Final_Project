@@ -31,7 +31,7 @@
 #define ERROR_USLEEP_FORMAT "Received usleep errno %s"
 
 #define DEBUG 1
-//#undef DEBUG
+#undef DEBUG
 
 #ifdef DEBUG
 #  define D(x) x
